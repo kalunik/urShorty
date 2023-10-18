@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
     container_name: urlShorty
     hostname: urlShorty
+    environment:
+      - CONFIG=docker
     ports:
       -   "4000:4000"
     restart: always

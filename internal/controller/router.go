@@ -14,7 +14,7 @@ func NewRouter() *Router {
 
 	r.Route("/shorty", func(r chi.Router) {
 		r.Post("/", addLink)
-		r.Post("#", addFriendlyLink)
+		r.Post("/", addFriendlyLink)
 		r.Get("/{key}", searchLink)
 	})
 	return &Router{Mux: r}

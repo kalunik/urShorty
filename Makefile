@@ -1,4 +1,4 @@
-CONFIG = config/config.yml
+CONFIG = config/config-docker.yml
 CONFIG_LOCAL = config/config-local.yml
 COMPOSE_ALL = ./docker-compose.yml
 COMPOSE_LOCAL = ./docker-compose.local.yml

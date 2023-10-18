@@ -2,7 +2,6 @@ package logger
 
 import (
 	"go.uber.org/zap"
-	"log"
 )
 
 type Loger interface {
@@ -30,16 +29,14 @@ func NewLogger() *apiLogger {
 }
 
 func (l *apiLogger) InitLogger() {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Println("zap logger failure: ", err.Error())
-	}
+	logger := zap.Must(zap.NewDevelopment())
 
 	l.sugar = logger.Sugar()
 
-	if err := l.sugar.Sync(); err != nil {
-		l.sugar.Error(err)
-	}
+	defer l.sugar.Sync()
+	//if err := l.sugar.Sync(); err != nil {
+	//	l.sugar.Error(err)
+	//}
 }
 
 func (l *apiLogger) Debug(args ...interface{}) {
