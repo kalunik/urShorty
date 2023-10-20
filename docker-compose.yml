@@ -4,8 +4,8 @@ services:
   url-shortener:
     build:
       dockerfile: Dockerfile
-    container_name: urlShorty
-    hostname: urlShorty
+    container_name: urShorty
+    hostname: urShorty
     environment:
       - CONFIG=docker
     ports:
@@ -14,8 +14,8 @@ services:
 
   redis:
     image: redis:7.2-alpine3.18
-    container_name: redis
-    hostname: redis
+    container_name: redis_urShorty
+    hostname: redis_urShorty
     ports:
       - "6379:6379"
     restart: always

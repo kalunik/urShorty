@@ -1,4 +1,4 @@
 .idea
 
-config/config.yml
+config/config-docker.yml
 config/config-local.yml

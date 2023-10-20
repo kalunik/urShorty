@@ -28,7 +28,7 @@ type RedisConfig struct {
 	PoolSize       int
 	PoolTimeout    int
 	Password       string
-	Db             int
+	DB             int
 }
 
 type ConfigDriver struct {
@@ -43,7 +43,7 @@ func LoadNewConfig() (*ConfigDriver, error) {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 
 		if errors.As(err, &configFileNotFoundError) {
-			return nil, errors.New("Config: file not found")
+			return nil, errors.New("config: file not found")
 		}
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (c *ConfigDriver) ParseConfig() (*AppConfig, error) {
 
 	err := c.v.Unmarshal(&config)
 	if err != nil {
-		return nil, fmt.Errorf("Config: unable to decode into struct: %w", err)
+		return nil, fmt.Errorf("config: unable to decode into struct: %w", err)
 	}
 	return config, nil
 }

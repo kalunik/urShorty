@@ -5,7 +5,7 @@ import (
 )
 
 type Loger interface {
-	InitLog()
+	InitLogger()
 	Debug(args ...interface{})
 	Debugf(template string, args ...interface{})
 	Info(args ...interface{})
@@ -24,7 +24,7 @@ type apiLogger struct {
 	sugar *zap.SugaredLogger
 }
 
-func NewLogger() *apiLogger {
+func NewLogger() Loger {
 	return &apiLogger{}
 }
 
@@ -34,9 +34,6 @@ func (l *apiLogger) InitLogger() {
 	l.sugar = logger.Sugar()
 
 	defer l.sugar.Sync()
-	//if err := l.sugar.Sync(); err != nil {
-	//	l.sugar.Error(err)
-	//}
 }
 
 func (l *apiLogger) Debug(args ...interface{}) {
