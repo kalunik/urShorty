@@ -2,41 +2,41 @@ package app
 
 import (
 	"github.com/kalunik/urShorty/config"
-	"github.com/kalunik/urShorty/internal/controller"
+	"github.com/kalunik/urShorty/internal/api"
 	r "github.com/kalunik/urShorty/internal/repository"
 	"github.com/kalunik/urShorty/internal/usecase"
-	"github.com/kalunik/urShorty/pkg/db"
 	"github.com/kalunik/urShorty/pkg/logger"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 )
 
-func Run() {
-	log := logger.NewLogger()
-	log.InitLogger()
+type App struct {
+	r           *api.Router
+	redisClient *redis.Client
+	log         logger.Logger
+	conf        config.AppConfig
+}
 
-	log.Info("launching app")
+func NewApp(redis *redis.Client, logger logger.Logger, config *config.AppConfig) *App {
+	return &App{r: nil, redisClient: redis, log: logger, conf: *config}
+}
 
-	configDriver, err := config.LoadNewConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-	appConfig, err := configDriver.ParseConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
+func (a *App) Run() {
 
-	redisClient, err := db.NewRedisConnection(appConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer redisClient.Close()
-	log.Info("redis connected")
+	repo := r.NewRedisRepository(a.redisClient)
 
-	urlPairUsecase := usecase.NewUrlPairUsecase(r.NewRedisRepository(redisClient), log)
+	urlService := usecase.NewUrlPairUsecase(repo, a.log)
 
-	r := controller.NewRouter()
+	urlPairHandlers := api.NewUrlPairHandlers(urlService, a.log)
 
-	log.Infof("server will start on %s port", appConfig.Server.Port)
-	http.ListenAndServe(appConfig.Server.Port, r.Mux)
+	a.r = api.NewRouter()
+	//check if I need return for UrlPairRouter(),
+	//I expect mux* (pointer) do all stuff
+	a.r.UrlPairRoutes(urlPairHandlers)
+
+	//middleware
+
+	a.log.Infof("server will start on %s port", a.conf.Server.Port)
+	http.ListenAndServe(a.conf.Server.Port, a.r.Mux)
 	//shutdown
 }

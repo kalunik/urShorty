@@ -4,7 +4,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Loger interface {
+type Logger interface {
 	InitLogger()
 	Debug(args ...interface{})
 	Debugf(template string, args ...interface{})
@@ -24,7 +24,7 @@ type apiLogger struct {
 	sugar *zap.SugaredLogger
 }
 
-func NewLogger() Loger {
+func NewLogger() Logger {
 	return &apiLogger{}
 }
 
