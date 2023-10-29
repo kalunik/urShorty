@@ -18,6 +18,6 @@ func (r *Router) UrlPairRoutes(h UrlPairHandlers) {
 		r.Post("/", h.addPair)
 		r.Post("/{url}", h.addPairHashParam)
 
-		r.Get("/{key}", h.getFullUrl)
+		r.Get("/{hash}", h.getFullUrl)
 	})
 }

@@ -26,14 +26,10 @@ func NewUrlPairUsecase(repository repository.Repository, logger logger.Logger) U
 }
 
 func (u *UrlPairUsecase) AddUrlPair(ctx context.Context, pair *entity.UrlPair) error {
-	ok, err := u.repo.AddUrlPair(ctx, pair)
-	if ok {
-		u.log.Infof("New urlPair '%s' added to redis", pair.Short)
-		return nil
-	}
-	if err != nil {
+	if err := u.repo.AddUrlPair(ctx, pair); err != nil {
 		return err
 	}
+	u.log.Infof("New urlPair with hash '%s' added to redis", pair.Short)
 	return nil
 }
 

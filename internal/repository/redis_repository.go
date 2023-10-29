@@ -9,7 +9,7 @@ import (
 )
 
 type Repository interface {
-	AddUrlPair(ctx context.Context, pair *entity.UrlPair) (bool, error)
+	AddUrlPair(ctx context.Context, pair *entity.UrlPair) error
 	GetFullUrl(ctx context.Context, shortUrl string) (string, error)
 }
 
@@ -23,19 +23,11 @@ func NewRedisRepository(client *redis.Client) Repository {
 	}
 }
 
-func (r *repo) AddUrlPair(ctx context.Context, pair *entity.UrlPair) (bool, error) {
-	exists, err := r.client.Exists(ctx, pair.Short).Result()
-	if err != nil {
-		return false, fmt.Errorf("redis client: EXISTS failure: %w", err)
+func (r *repo) AddUrlPair(ctx context.Context, pair *entity.UrlPair) error {
+	if err := r.client.Set(ctx, pair.Short, pair.Full, 0).Err(); err != nil {
+		return fmt.Errorf("redis client: SET failure: %w", err)
 	}
-
-	if exists == 0 {
-		if err := r.client.Set(ctx, pair.Short, pair.Full, 0).Err(); err != nil {
-			return false, fmt.Errorf("redis client: SET failure: %w", err)
-		}
-		return true, nil
-	}
-	return false, nil
+	return nil
 }
 
 func (r *repo) GetFullUrl(ctx context.Context, shortUrl string) (string, error) {

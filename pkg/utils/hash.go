@@ -5,7 +5,7 @@ import (
 	"math/rand"
 )
 
-func generateShortURL(full string) (string, error) {
+func GenerateHash(full string) (string, error) {
 
 	const (
 		base62Chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -16,14 +16,11 @@ func generateShortURL(full string) (string, error) {
 	shortURL := &bytes.Buffer{}
 
 	for i := 0; i < shortLength; i++ {
-		shortURL.WriteByte(base62Chars[rand.Intn(base)])
+		err := shortURL.WriteByte(base62Chars[rand.Intn(base)])
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return shortURL.String(), nil
 }
-
-//func main() {
-//	str, _ := generateShortURL("https://github.com/AleksK1NG/Go-Clean-Architecture-REST-API/blob/master/pkg/utils/http.go#L119")
-//	fmt.Println(str)
-//	return
-//}
