@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Router struct {
@@ -13,6 +14,7 @@ func NewRouter() *Router {
 }
 
 func (r *Router) UrlPairRoutes(h UrlPairHandlers) {
+	r.Mux.Mount("/debug", middleware.Profiler())
 	r.Mux.Route("/shorten", func(r chi.Router) {
 
 		r.Post("/", h.addPair)

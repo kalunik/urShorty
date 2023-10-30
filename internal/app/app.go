@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/kalunik/urShorty/config"
 	"github.com/kalunik/urShorty/internal/api"
 	r "github.com/kalunik/urShorty/internal/repository"
@@ -30,11 +31,12 @@ func (a *App) Run() {
 	urlPairHandlers := api.NewUrlPairHandlers(urlService, a.log)
 
 	a.r = api.NewRouter()
+	//middleware
+	a.r.Mux.Use(middleware.RequestID)
+
 	//check if I need return for UrlPairRouter(),
 	//I expect mux* (pointer) do all stuff
 	a.r.UrlPairRoutes(urlPairHandlers)
-
-	//middleware
 
 	a.log.Infof("server will start on %s port", a.conf.Server.Port)
 	http.ListenAndServe(a.conf.Server.Port, a.r.Mux)

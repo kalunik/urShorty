@@ -29,7 +29,6 @@ func (u *UrlPairUsecase) AddUrlPair(ctx context.Context, pair *entity.UrlPair) e
 	if err := u.repo.AddUrlPair(ctx, pair); err != nil {
 		return err
 	}
-	u.log.Infof("New urlPair with hash '%s' added to redis", pair.Short)
 	return nil
 }
 

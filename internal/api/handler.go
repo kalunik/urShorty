@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/kalunik/urShorty/internal/entity"
 	"github.com/kalunik/urShorty/internal/usecase"
@@ -35,30 +37,31 @@ func (h *Handlers) addPair(w http.ResponseWriter, r *http.Request) {
 	urlPair := &entity.UrlPair{}
 	err := json.NewDecoder(r.Body).Decode(urlPair)
 	if err != nil {
-		h.log.Error("urlPairHandlers: addPair: json decode fail")
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPair: json decode fail: %w", err))
 		http.Error(w, "Failed to decode JSON data", http.StatusBadRequest)
 		return
 	}
 
 	urlPair.Short, err = utils.GenerateHash(urlPair.Full)
 	if err != nil {
-		h.log.Error("urlPairHandlers: addPair: generate hash fail")
-		http.Error(w, "Failed to decode JSON data", http.StatusInternalServerError)
+		utils.LogResponseError(r, h.log, errors.New("addPair: generate hash fail"))
+		http.Error(w, "Failed to generate short url", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.urlPairUsecase.AddUrlPair(context.Background(), urlPair); err != nil {
-		h.log.Error("urlPairHandlers: fail to add pair")
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPair fail: %w", err))
 		http.Error(w, "Failed to add url pair", http.StatusInternalServerError)
 		return
 	}
+	h.log.Infof("new urlPair with hash '%s' added to redis", urlPair.Short)
 
+	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(urlPair); err != nil {
-		h.log.Error("urlPairHandlers: addPair: encode fail")
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPair: encode fail, %w", err))
 		http.Error(w, "Failed to encode json", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *Handlers) addPairHashParam(w http.ResponseWriter, r *http.Request) {
@@ -69,9 +72,11 @@ func (h *Handlers) getFullUrl(w http.ResponseWriter, r *http.Request) {
 	shortUrl := chi.URLParam(r, "hash")
 	fullUrl, err := h.urlPairUsecase.FindFullUrl(context.Background(), shortUrl)
 	if err != nil {
-		h.log.Errorf("urlPairHandlers: getFullUrl: %w", err)
+		utils.LogResponseError(r, h.log, err)
 		http.Error(w, "Failed to find full URL", http.StatusBadRequest)
 		return
 	}
-	http.RedirectHandler(fullUrl, http.StatusMovedPermanently)
+
+	http.Redirect(w, r, fullUrl, http.StatusFound)
+	h.log.Infof("client redirected to `%s`", fullUrl)
 }
