@@ -11,11 +11,12 @@ import (
 	"github.com/kalunik/urShorty/pkg/logger"
 	"github.com/kalunik/urShorty/pkg/utils"
 	"net/http"
+	"net/url"
 )
 
 type UrlPairHandlers interface {
 	addPair(w http.ResponseWriter, r *http.Request)
-	addPairHashParam(w http.ResponseWriter, r *http.Request)
+	addPairFragment(w http.ResponseWriter, r *http.Request)
 	getFullUrl(writer http.ResponseWriter, request *http.Request)
 }
 
@@ -64,8 +65,37 @@ func (h *Handlers) addPair(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handlers) addPairHashParam(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+func (h *Handlers) addPairFragment(w http.ResponseWriter, r *http.Request) {
+	u, err := url.ParseRequestURI(r.RequestURI)
+	if err != nil {
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPairFragment: parse URI fail, %w", err))
+		http.Error(w, "Failed to parse URI", http.StatusBadRequest)
+		return
+	}
+	urlPair := &entity.UrlPair{Full: u.EscapedFragment()}
+
+	parsed, _ := url.ParseQuery(u.RequestURI())
+	fmt.Println("hey", parsed, "-", u.EscapedFragment(), "-", u.RawFragment, "-", u.EscapedPath(), "-", u.RequestURI(), "-", r.URL, "-", r.RequestURI)
+	urlPair.Short, err = utils.GenerateHash(urlPair.Full)
+	if err != nil {
+		utils.LogResponseError(r, h.log, errors.New("addPair: generate hash fail"))
+		http.Error(w, "Failed to generate short url", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.urlPairUsecase.AddUrlPair(context.Background(), urlPair); err != nil {
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPair fail: %w", err))
+		http.Error(w, "Failed to add url pair", http.StatusInternalServerError)
+		return
+	}
+	h.log.Infof("new urlPair with hash '%s' added to redis", urlPair.Short)
+
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(urlPair); err != nil {
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPair: encode fail, %w", err))
+		http.Error(w, "Failed to encode json", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *Handlers) getFullUrl(w http.ResponseWriter, r *http.Request) {

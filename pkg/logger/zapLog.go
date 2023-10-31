@@ -34,8 +34,6 @@ func NewLogger() Logger {
 }
 
 func (l *apiLogger) InitLogger() {
-	//logger := zap.Must(zap.NewDevelopment())
-
 	core := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
 		zapcore.AddSync(os.Stderr),
@@ -109,8 +107,4 @@ func (l *apiLogger) Fatal(args ...interface{}) {
 
 func (l *apiLogger) Fatalf(template string, args ...interface{}) {
 	l.sugar.Fatalf(template, args...)
-}
-
-func (l *apiLogger) WithOptions(opts ...zap.Option) *zap.SugaredLogger {
-	return l.sugar.WithOptions(opts...)
 }

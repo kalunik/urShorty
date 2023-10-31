@@ -9,5 +9,8 @@ Content-Type: application/json
 GET localhost:4000/shorten/Y9wiVQJQ
 
 ###
-GET localhost:4000/shorten/jds
+GET localhost:4000/shorten/oMhQSUkj
+
+###
+POST localhost:4000/shorten/#go.dev
 
