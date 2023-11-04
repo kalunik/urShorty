@@ -2,15 +2,15 @@ POST localhost:4000/shorten/
 Content-Type: application/json
 
 {
-  "full": "google.ru"
+  "full": "https://ya.ru"
 }
 
 ###
 GET localhost:4000/shorten/Y9wiVQJQ
 
 ###
-GET localhost:4000/shorten/oMhQSUkj
+GET localhost:4000/shorten/gauPtBfU
 
 ###
-POST localhost:4000/shorten/#go.dev
+
 

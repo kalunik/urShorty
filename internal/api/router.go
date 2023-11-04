@@ -16,9 +16,7 @@ func NewRouter() *Router {
 func (r *Router) UrlPairRoutes(h UrlPairHandlers) {
 	r.Mux.Mount("/debug", middleware.Profiler())
 	r.Mux.Route("/shorten", func(r chi.Router) {
-
-		r.Post("/", h.addPairFragment)
-		r.Post("/add", h.addPair)
+		r.Post("/", h.addPair)
 
 		r.Get("/{hash}", h.getFullUrl)
 	})
