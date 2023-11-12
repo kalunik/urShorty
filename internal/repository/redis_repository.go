@@ -8,29 +8,30 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type Repository interface {
-	AddUrlPair(ctx context.Context, pair *entity.UrlPair) error
+type RedisRepository interface {
+	AddPathUrl(ctx context.Context, pair entity.PathMeta) error
 	GetFullUrl(ctx context.Context, shortUrl string) (string, error)
+	IsExist(ctx context.Context, shortUrl string) (int64, error)
 }
 
-type repo struct {
+type redisRepo struct {
 	client *redis.Client
 }
 
-func NewRedisRepository(client *redis.Client) Repository {
-	return &repo{
+func NewRedisRepository(client *redis.Client) RedisRepository {
+	return &redisRepo{
 		client: client,
 	}
 }
 
-func (r *repo) AddUrlPair(ctx context.Context, pair *entity.UrlPair) error {
-	if err := r.client.Set(ctx, pair.Short, pair.Full, 0).Err(); err != nil {
+func (r *redisRepo) AddPathUrl(ctx context.Context, pair entity.PathMeta) error {
+	if err := r.client.Set(ctx, pair.ShortPath, pair.FullUrl, 0).Err(); err != nil {
 		return fmt.Errorf("redis client: SET failure: %w", err)
 	}
 	return nil
 }
 
-func (r *repo) GetFullUrl(ctx context.Context, shortUrl string) (string, error) {
+func (r *redisRepo) GetFullUrl(ctx context.Context, shortUrl string) (string, error) {
 	fullUrl, err := r.client.Get(ctx, shortUrl).Result()
 	if err == redis.Nil {
 		return "", errors.New("redis client: url not exist")
@@ -38,4 +39,12 @@ func (r *repo) GetFullUrl(ctx context.Context, shortUrl string) (string, error) 
 		return "", fmt.Errorf("redis client: GET failure: %w", err)
 	}
 	return fullUrl, nil
+}
+
+func (r *redisRepo) IsExist(ctx context.Context, shortUrl string) (int64, error) {
+	exist, err := r.client.Exists(ctx, shortUrl).Result()
+	if err != nil {
+		return exist, fmt.Errorf("redis client: EXISTS failure: %w", err)
+	}
+	return exist, nil
 }

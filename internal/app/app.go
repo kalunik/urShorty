@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/kalunik/urShorty/config"
 	"github.com/kalunik/urShorty/internal/api"
@@ -12,23 +13,24 @@ import (
 )
 
 type App struct {
-	r           *api.Router
-	redisClient *redis.Client
-	log         logger.Logger
-	conf        config.AppConfig
+	r                *api.Router
+	redisClient      *redis.Client
+	clickhouseClient driver.Conn
+	log              logger.Logger
+	conf             config.AppConfig
 }
 
-func NewApp(redis *redis.Client, logger logger.Logger, config *config.AppConfig) *App {
-	return &App{r: nil, redisClient: redis, log: logger, conf: *config}
+func NewApp(redis *redis.Client, clickhouse driver.Conn, logger logger.Logger, config *config.AppConfig) *App {
+	return &App{r: nil, redisClient: redis, clickhouseClient: clickhouse, log: logger, conf: *config}
 }
 
 func (a *App) Run() {
+	redisRepo := r.NewRedisRepository(a.redisClient)
+	clickhouseRepo := r.NewClickhouseRepository(a.clickhouseClient)
 
-	repo := r.NewRedisRepository(a.redisClient)
+	urlService := usecase.NewPathMetaUsecase(redisRepo, clickhouseRepo, a.log)
 
-	urlService := usecase.NewUrlPairUsecase(repo, a.log)
-
-	urlPairHandlers := api.NewUrlPairHandlers(urlService, a.log)
+	urlPairHandlers := api.NewPathMetaHandlers(urlService, a.log)
 
 	a.r = api.NewRouter()
 	//middleware
@@ -36,7 +38,7 @@ func (a *App) Run() {
 
 	//check if I need return for UrlPairRouter(),
 	//I expect mux* (pointer) do all stuff
-	a.r.UrlPairRoutes(urlPairHandlers)
+	a.r.PathMetaRoutes(urlPairHandlers)
 
 	a.log.Infof("server will start on %s port", a.conf.Server.Port)
 	http.ListenAndServe(a.conf.Server.Port, a.r.Mux)

@@ -2,44 +2,101 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"github.com/kalunik/urShorty/internal/entity"
 	"github.com/kalunik/urShorty/internal/repository"
 	"github.com/kalunik/urShorty/pkg/logger"
+	"github.com/kalunik/urShorty/pkg/utils"
+	"net/url"
+	"time"
 )
 
 type Usecase interface {
-	AddUrlPair(ctx context.Context, pair *entity.UrlPair) error
-	FindFullUrl(ctx context.Context, shortUrl string) (string, error)
-	GetRepo() repository.Repository
+	AddUrlPath(ctx context.Context, meta *entity.PathMeta) error
+	GetFullUrl(ctx context.Context, shortPath string) (string, error)
+	GetListVisits(ctx context.Context, shortPath string) (*entity.PathVisitsList, error)
+	IsExists(ctx context.Context, shortPath string) (bool, error)
+	GetRepo() repository.RedisRepository
 }
 
-type UrlPairUsecase struct {
-	repo repository.Repository
-	log  logger.Logger
+type PathMetaUsecase struct {
+	redisRepo      repository.RedisRepository
+	clickhouseRepo repository.ClickhouseRepository
+	log            logger.Logger
 }
 
-func NewUrlPairUsecase(repository repository.Repository, logger logger.Logger) Usecase {
-	return &UrlPairUsecase{
-		repo: repository,
-		log:  logger,
+func NewPathMetaUsecase(redis repository.RedisRepository, clickhouse repository.ClickhouseRepository, logger logger.Logger) Usecase {
+	return &PathMetaUsecase{
+		redisRepo:      redis,
+		clickhouseRepo: clickhouse,
+		log:            logger,
 	}
 }
 
-func (u *UrlPairUsecase) AddUrlPair(ctx context.Context, pair *entity.UrlPair) error {
-	if err := u.repo.AddUrlPair(ctx, pair); err != nil {
+func (u *PathMetaUsecase) AddUrlPath(ctx context.Context, meta *entity.PathMeta) error {
+	var err error
+	meta.ShortPath, err = utils.GenerateHash(meta.FullUrl)
+	if err != nil {
+		return errors.New("addPair: generate hash fail")
+	}
+	parsedUrl, _ := url.Parse(meta.FullUrl)
+	meta.Domain = parsedUrl.Host
+	meta.CreatedAt = time.Now()
+
+	if err := u.redisRepo.AddPathUrl(ctx, *meta); err != nil {
 		return err
 	}
+
+	if err := u.clickhouseRepo.AddNewShortPath(ctx, *meta); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (u *UrlPairUsecase) FindFullUrl(ctx context.Context, shortUrl string) (string, error) {
-	fullUrl, err := u.repo.GetFullUrl(ctx, shortUrl)
+func (u *PathMetaUsecase) GetFullUrl(ctx context.Context, shortUrl string) (string, error) {
+	fullUrl, err := u.redisRepo.GetFullUrl(ctx, shortUrl)
 	if err != nil {
 		return "", err
 	}
+
+	//TODO Add Lat Lon (go?)
+	meta := entity.PathMeta{
+		ShortPath: shortUrl,
+		VisitedAt: time.Now(),
+		Latitude:  54,
+		Longitude: 12,
+		Country:   "Rusland",
+		City:      "Moscow",
+		Proxy:     false,
+	}
+	err = u.clickhouseRepo.AddPathVisit(ctx, meta)
+	if err != nil {
+		return fullUrl, err
+	}
+
 	return fullUrl, nil
 }
 
-func (u *UrlPairUsecase) GetRepo() repository.Repository {
-	return u.repo
+func (u *PathMetaUsecase) GetListVisits(ctx context.Context, shortPath string) (*entity.PathVisitsList, error) {
+	visits, err := u.clickhouseRepo.ListVisits(ctx, shortPath)
+	if err != nil {
+		return nil, err
+	}
+	return visits, nil
+}
+
+func (u *PathMetaUsecase) IsExists(ctx context.Context, shortPath string) (bool, error) {
+	exist, err := u.redisRepo.IsExist(ctx, shortPath)
+	if err != nil {
+		return false, err
+	}
+	if exist == 1 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (u *PathMetaUsecase) GetRepo() repository.RedisRepository {
+	return u.redisRepo
 }

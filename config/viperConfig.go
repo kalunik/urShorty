@@ -9,8 +9,9 @@ import (
 )
 
 type AppConfig struct {
-	Server ServerConfig
-	Redis  RedisConfig
+	Server     ServerConfig
+	Redis      RedisConfig
+	Clickhouse ClickhouseConfig
 }
 
 type ServerConfig struct {
@@ -29,6 +30,16 @@ type RedisConfig struct {
 	PoolTimeout    int
 	Password       string
 	DB             int
+}
+
+type ClickhouseConfig struct {
+	ClickhouseAddr   string
+	ClickhouseDb     string
+	Username         string
+	Password         string
+	MaxExecutionTime int
+	MaxOpenConns     int
+	MaxIdleConns     int
 }
 
 type ConfigDriver struct {

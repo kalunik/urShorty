@@ -13,11 +13,12 @@ func NewRouter() *Router {
 	return &Router{Mux: chi.NewRouter()}
 }
 
-func (r *Router) UrlPairRoutes(h UrlPairHandlers) {
+func (r *Router) PathMetaRoutes(h PathMetaHandlers) {
 	r.Mux.Mount("/debug", middleware.Profiler())
 	r.Mux.Route("/shorten", func(r chi.Router) {
-		r.Post("/", h.addPair)
+		r.Post("/", h.addPath)
 
 		r.Get("/{hash}", h.getFullUrl)
+		r.Get("/{hash}/visits", h.listVisits)
 	})
 }

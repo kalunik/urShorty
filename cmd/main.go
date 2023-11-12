@@ -29,5 +29,11 @@ func main() {
 	defer redisClient.Close()
 	log.Info("redis connected")
 
-	app.NewApp(redisClient, log, appConfig).Run()
+	clickhouseClient, err := db.NewClickhouseConnection(appConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer clickhouseClient.Close()
+	log.Info("clickhouse connected")
+	app.NewApp(redisClient, clickhouseClient, log, appConfig).Run()
 }

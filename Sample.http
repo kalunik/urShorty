@@ -2,14 +2,14 @@ POST localhost:4000/shorten/
 Content-Type: application/json
 
 {
-  "full": "https://ya.ru"
+  "full_url": "https://google.ru"
 }
 
 ###
-GET localhost:4000/shorten/Y9wiVQJQ
+GET localhost:4000/shorten/slb4yBXR
 
 ###
-GET localhost:4000/shorten/gauPtBfU
+GET localhost:4000/shorten/cG1hbJE/visits
 
 ###
 

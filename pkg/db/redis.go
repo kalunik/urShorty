@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type repo struct {
+type redisStorage struct {
 	client *redis.Client
 }
 

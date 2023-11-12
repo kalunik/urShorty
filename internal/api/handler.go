@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/kalunik/urShorty/internal/entity"
@@ -13,51 +12,45 @@ import (
 	"net/http"
 )
 
-type UrlPairHandlers interface {
-	addPair(w http.ResponseWriter, r *http.Request)
+type PathMetaHandlers interface {
+	addPath(w http.ResponseWriter, r *http.Request)
 	getFullUrl(writer http.ResponseWriter, request *http.Request)
+	listVisits(writer http.ResponseWriter, request *http.Request)
 }
 
 type Handlers struct {
-	urlPairUsecase usecase.Usecase
-	log            logger.Logger
+	pathMetaUsecase usecase.Usecase
+	log             logger.Logger
 }
 
-func NewUrlPairHandlers(urlPairUC usecase.Usecase, log logger.Logger) UrlPairHandlers {
+func NewPathMetaHandlers(pathMetaUC usecase.Usecase, log logger.Logger) PathMetaHandlers {
 	return &Handlers{
-		urlPairUsecase: urlPairUC,
-		log:            log,
+		pathMetaUsecase: pathMetaUC,
+		log:             log,
 	}
 }
 
 // Create a new pair of short and full url
 // return a shortUrl (aka key) for getFullUrl handler
-func (h *Handlers) addPair(w http.ResponseWriter, r *http.Request) {
-	urlPair := &entity.UrlPair{}
+func (h *Handlers) addPath(w http.ResponseWriter, r *http.Request) {
+	urlPair := &entity.PathMeta{}
 	err := json.NewDecoder(r.Body).Decode(urlPair)
 	if err != nil {
-		utils.LogResponseError(r, h.log, fmt.Errorf("addPair: json decode fail: %w", err))
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPath: json decode fail: %w", err))
 		http.Error(w, "Failed to decode JSON data", http.StatusBadRequest)
 		return
 	}
 
-	urlPair.Short, err = utils.GenerateHash(urlPair.Full)
-	if err != nil {
-		utils.LogResponseError(r, h.log, errors.New("addPair: generate hash fail"))
-		http.Error(w, "Failed to generate short url", http.StatusInternalServerError)
-		return
-	}
-
-	if err := h.urlPairUsecase.AddUrlPair(context.Background(), urlPair); err != nil {
-		utils.LogResponseError(r, h.log, fmt.Errorf("addPair fail: %w", err))
+	if err := h.pathMetaUsecase.AddUrlPath(context.Background(), urlPair); err != nil {
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPath fail: %w", err))
 		http.Error(w, "Failed to add url pair", http.StatusInternalServerError)
 		return
 	}
-	h.log.Infof("new urlPair with hash '%s' added to redis", urlPair.Short)
+	h.log.Infof("new urlPair with hash '%s' added to redis", urlPair.ShortPath)
 
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(urlPair); err != nil {
-		utils.LogResponseError(r, h.log, fmt.Errorf("addPair: encode fail, %w", err))
+		utils.LogResponseError(r, h.log, fmt.Errorf("addPath: encode fail, %w", err))
 		http.Error(w, "Failed to encode json", http.StatusInternalServerError)
 		return
 	}
@@ -65,7 +58,7 @@ func (h *Handlers) addPair(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) getFullUrl(w http.ResponseWriter, r *http.Request) {
 	shortUrl := chi.URLParam(r, "hash")
-	fullUrl, err := h.urlPairUsecase.FindFullUrl(context.Background(), shortUrl)
+	fullUrl, err := h.pathMetaUsecase.GetFullUrl(context.Background(), shortUrl)
 	if err != nil {
 		utils.LogResponseError(r, h.log, err)
 		http.Error(w, "Failed to find full URL", http.StatusBadRequest)
@@ -74,4 +67,30 @@ func (h *Handlers) getFullUrl(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, fullUrl, http.StatusFound)
 	h.log.Infof("client redirected to `%s`", fullUrl)
+}
+
+func (h *Handlers) listVisits(w http.ResponseWriter, r *http.Request) {
+	shortPath := chi.URLParam(r, "hash")
+	pathExist, err := h.pathMetaUsecase.IsExists(context.Background(), shortPath)
+	if err != nil {
+		utils.LogResponseError(r, h.log, err)
+		http.Error(w, "Fail to check path existence", http.StatusInternalServerError)
+		return
+	}
+	if !pathExist {
+		http.Error(w, "No such URL", http.StatusNotFound)
+		return
+	}
+
+	visits, err := h.pathMetaUsecase.GetListVisits(context.Background(), shortPath)
+	if err != nil {
+		utils.LogResponseError(r, h.log, fmt.Errorf("listVisits: usecase fail, %w", err))
+		http.Error(w, "Failed to get list of visits", http.StatusInternalServerError)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(visits); err != nil {
+		utils.LogResponseError(r, h.log, fmt.Errorf("listVisits: encode fail, %w", err))
+		http.Error(w, "Failed to encode json", http.StatusInternalServerError)
+		return
+	}
 }

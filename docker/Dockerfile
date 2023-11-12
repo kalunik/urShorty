@@ -1,10 +1,10 @@
 FROM golang:1.21.3-alpine3.18 as binary
 LABEL authors="kalunik"
 WORKDIR /go/src/github.com/kalunik/urShorty/
-COPY go.mod ./
-COPY go.sum ./
+COPY ../go.mod ./
+COPY ../go.sum ./
 RUN go mod download
-COPY ./ ./
+COPY .. ./
 RUN go build -o urShorty cmd/main.go
 
 FROM alpine:3.18

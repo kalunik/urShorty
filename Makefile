@@ -10,7 +10,7 @@ all:
 			docker compose -f $(COMPOSE_ALL) up --build
 
 local:
-			@(docker compose -f $(COMPOSE_LOCAL) up --build)
+			@(docker compose -f $(COMPOSE_LOCAL) up -d --build)
 
 config:
 			@(echo "Creating configs for launch. Don't forget change sample credentials.")

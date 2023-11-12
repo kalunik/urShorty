@@ -3,7 +3,7 @@ version: "3.9"
 services:
   url-shortener:
     build:
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: urShorty
     hostname: urShorty
     environment:
@@ -18,4 +18,15 @@ services:
     hostname: redis_urShorty
     ports:
       - "6379:6379"
+    restart: always
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.10.1.1976-alpine
+    container_name: clickhouse_urShorty
+    hostname: clickhouse_urShorty
+    volumes:
+      - ./data_clickhouse:/var/lib/postgresql/data
+      - ./docker/clickhouse:/docker-entrypoint-initdb.d/:ro
+    ports:
+      - "9000:9000"
     restart: always
