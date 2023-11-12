@@ -13,3 +13,12 @@ redis:
   PoolTimeout: 240
   Password: ""
   DB: 0
+
+clickhouse:
+  ClickhouseAddr: localhost:9000
+  ClickhouseDb: "default"
+  Username: "default"
+  Password: ""
+  MaxExecutionTime: 60
+  MaxOpenConns: 5
+  MaxIdleConns: 5

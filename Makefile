@@ -1,4 +1,4 @@
-CONFIG = config/config.yml
+CONFIG = config/config-docker.yml
 CONFIG_LOCAL = config/config-local.yml
 COMPOSE_ALL = ./docker-compose.yml
 COMPOSE_LOCAL = ./docker-compose.local.yml
@@ -10,7 +10,7 @@ all:
 			docker compose -f $(COMPOSE_ALL) up --build
 
 local:
-			@(docker compose -f $(COMPOSE_LOCAL) up --build)
+			@(docker compose -f $(COMPOSE_LOCAL) up -d --build)
 
 config:
 			@(echo "Creating configs for launch. Don't forget change sample credentials.")

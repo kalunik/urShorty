@@ -1,12 +1,15 @@
 package logger
 
 import (
+	"errors"
 	"go.uber.org/zap"
-	"log"
+	"go.uber.org/zap/zapcore"
+	"os"
+	"syscall"
 )
 
-type Loger interface {
-	InitLog()
+type Logger interface {
+	InitLogger()
 	Debug(args ...interface{})
 	Debugf(template string, args ...interface{})
 	Info(args ...interface{})
@@ -15,6 +18,7 @@ type Loger interface {
 	Warnf(template string, args ...interface{})
 	Error(args ...interface{})
 	Errorf(template string, args ...interface{})
+	ErrorfCaller(callerSkip int, template string, args ...interface{})
 	DPanic(args ...interface{})
 	DPanicf(template string, args ...interface{})
 	Fatal(args ...interface{})
@@ -25,21 +29,24 @@ type apiLogger struct {
 	sugar *zap.SugaredLogger
 }
 
-func NewLogger() *apiLogger {
+func NewLogger() Logger {
 	return &apiLogger{}
 }
 
 func (l *apiLogger) InitLogger() {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Println("zap logger failure: ", err.Error())
-	}
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
+		zapcore.AddSync(os.Stderr),
+		zap.NewAtomicLevelAt(zapcore.InfoLevel))
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	l.sugar = logger.Sugar()
-
-	if err := l.sugar.Sync(); err != nil {
-		l.sugar.Error(err)
-	}
+	defer func(sugar *zap.SugaredLogger) {
+		err := l.sugar.Sync()
+		if err != nil && !errors.Is(err, syscall.ENOTTY) {
+			l.sugar.Error(err)
+		}
+	}(l.sugar)
 }
 
 func (l *apiLogger) Debug(args ...interface{}) {
@@ -72,6 +79,10 @@ func (l *apiLogger) Error(args ...interface{}) {
 
 func (l *apiLogger) Errorf(template string, args ...interface{}) {
 	l.sugar.Errorf(template, args...)
+}
+
+func (l *apiLogger) ErrorfCaller(addCallerSkip int, template string, args ...interface{}) {
+	l.sugar.WithOptions(zap.AddCallerSkip(addCallerSkip)).Errorf(template, args...)
 }
 
 func (l *apiLogger) DPanic(args ...interface{}) {
