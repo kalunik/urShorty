@@ -19,6 +19,6 @@ func (r *Router) PathMetaRoutes(h PathMetaHandlers) {
 		r.Post("/", h.addPath)
 
 		r.Get("/{hash}", h.getFullUrl)
-		r.Get("/{hash}/visits", h.listVisits)
+		r.Get("/{hash}/visits", h.pathVisits)
 	})
 }
