@@ -38,7 +38,7 @@ func NewPathMetaUsecase(redis repository.RedisRepository, clickhouse repository.
 
 func (u *PathMetaUsecase) AddUrlPath(ctx context.Context, meta *entity.PathMeta) error {
 	var err error
-	meta.ShortPath, err = utils.GenerateHash(meta.FullUrl)
+	meta.ShortPath, err = utils.GenerateHash()
 	if err != nil {
 		return errors.New("addPair: generate hash fail")
 	}

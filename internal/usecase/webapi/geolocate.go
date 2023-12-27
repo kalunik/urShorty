@@ -1,9 +1,7 @@
 package webapi
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/kalunik/urShorty/internal/entity"
 	"net/http"
@@ -21,22 +19,18 @@ func NewIPGeoWebAPI() IPGeolocation {
 }
 
 func (a IPGeoWebAPI) GetIPLocation(userIP string) (entity.ResponseGeolocateAPI, error) {
-	url := "http://ip-api.com/batch\\?fields\\=country,city,proxy"
+	apiUrl := fmt.Sprintf("http://ip-api.com/json/%s", userIP)
 
-	contentType := "application/json"
-	bodyJson, err := json.Marshal(userIP)
-	if err != nil {
-		return entity.ResponseGeolocateAPI{}, errors.New("json marshal fail")
-	}
-	body := bytes.NewBuffer(bodyJson)
-
-	post, err := http.Post(url, contentType, body)
+	resp, err := http.Get(apiUrl)
 	if err != nil {
 		return entity.ResponseGeolocateAPI{}, fmt.Errorf("post fail: %w", err)
 	}
-	defer post.Body.Close()
+	defer resp.Body.Close()
 
-	responseData := entity.ResponseGeolocateAPI{}
-	json.NewDecoder(post.Body).Decode(&responseData)
-	return responseData, nil
+	respData := entity.ResponseGeolocateAPI{}
+	err = json.NewDecoder(resp.Body).Decode(&respData)
+	if err != nil {
+		return entity.ResponseGeolocateAPI{}, err
+	}
+	return respData, nil
 }

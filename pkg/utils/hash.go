@@ -5,7 +5,7 @@ import (
 	"math/rand"
 )
 
-func GenerateHash(full string) (string, error) {
+func GenerateHash() (string, error) {
 
 	const (
 		base62Chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

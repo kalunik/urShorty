@@ -15,7 +15,7 @@ func LogResponseError(r *http.Request, logger logger.Logger, err error) {
 	)
 }
 
-func GetRequestID(r *http.Request) interface{} {
+func GetRequestID(r *http.Request) string {
 	return middleware.GetReqID(r.Context())
 }
 
