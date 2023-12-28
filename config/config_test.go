@@ -11,7 +11,7 @@ func TestLoadNewConfig(t *testing.T) {
 
 func TestConfigDriver_ParseConfig(t *testing.T) {
 	configKeyEnv := "custom"
-	configPathEnv := "/Users/kalunik/GolandProjects/urShorty/config/config-sample.yml"
+	configPathEnv := "config-sample.yml"
 	expectedConfig := &AppConfig{
 		Server: ServerConfig{":4000", false, 12},
 		Redis: RedisConfig{"localhost:6379", "", "0", "0",
