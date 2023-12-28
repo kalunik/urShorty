@@ -8,6 +8,8 @@ import (
 	"syscall"
 )
 
+//go:generate mockgen -source=zapLog.go -destination=mocks/mock.go
+
 type Logger interface {
 	InitLogger()
 	Debug(args ...interface{})

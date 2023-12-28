@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source=config.go -destination=mocks/mock.go
+
 type AppConfig struct {
 	Server     ServerConfig
 	Redis      RedisConfig
@@ -42,11 +44,15 @@ type ClickhouseConfig struct {
 	MaxIdleConns     int
 }
 
+type Config interface {
+	ParseConfig() (*AppConfig, error)
+}
+
 type ConfigDriver struct {
 	v *viper.Viper
 }
 
-func LoadNewConfig() (*ConfigDriver, error) {
+func LoadNewConfig() (Config, error) {
 	v := viper.New()
 	v.SetConfigFile(findConfigPath())
 
@@ -75,14 +81,21 @@ func (c *ConfigDriver) ParseConfig() (*AppConfig, error) {
 }
 
 func findConfigPath() string {
+	customPath := os.Getenv("CONFIG_PATH")
+
 	configPaths := map[string]string{
 		"docker": "config/config-docker.yml",
 		"local":  "config/config-local.yml",
+		"custom": customPath,
 	}
+	defaultPath := configPaths["local"]
 
 	pathKey := os.Getenv("CONFIG")
 	if pathKey == "" {
-		return configPaths["local"]
+		return defaultPath
 	}
-	return configPaths[pathKey]
+	if path, ok := configPaths[pathKey]; ok {
+		return path
+	}
+	return defaultPath
 }

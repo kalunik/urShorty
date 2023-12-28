@@ -5,7 +5,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/kalunik/urShorty/config"
 	"github.com/kalunik/urShorty/internal/api"
-	r "github.com/kalunik/urShorty/internal/repository"
+	repo "github.com/kalunik/urShorty/internal/repository"
 	"github.com/kalunik/urShorty/internal/usecase"
 	"github.com/kalunik/urShorty/pkg/logger"
 	"github.com/redis/go-redis/v9"
@@ -25,12 +25,12 @@ func NewApp(redis *redis.Client, clickhouse driver.Conn, logger logger.Logger, c
 }
 
 func (a *App) Run() {
-	redisRepo := r.NewRedisRepository(a.redisClient)
-	clickhouseRepo := r.NewClickhouseRepository(a.clickhouseClient)
+	redisRepo := repo.NewRedisRepository(a.redisClient)
+	clickhouseRepo := repo.NewClickhouseRepository(a.clickhouseClient)
 
 	urlService := usecase.NewPathMetaUsecase(redisRepo, clickhouseRepo, a.log)
 
-	urlPairHandlers := api.NewPathMetaHandlers(urlService, a.log)
+	pathMetaHandlers := api.NewPathMetaHandlers(urlService, a.log)
 
 	a.r = api.NewRouter()
 	//middleware
@@ -38,9 +38,11 @@ func (a *App) Run() {
 
 	//check if I need return for UrlPairRouter(),
 	//I expect mux* (pointer) do all stuff
-	a.r.PathMetaRoutes(urlPairHandlers)
+	a.r.PathMetaRoutes(pathMetaHandlers)
 
-	a.log.Infof("server will start on %s port", a.conf.Server.Port)
-	http.ListenAndServe(a.conf.Server.Port, a.r.Mux)
+	a.log.Infof("api server will start on %s port", a.conf.Server.Port)
+	go http.ListenAndServe(a.conf.Server.Port, a.r.Mux)
+
+	a.log.Infof("geolocation started")
 	//shutdown
 }

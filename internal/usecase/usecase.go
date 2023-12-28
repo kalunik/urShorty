@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/kalunik/urShorty/internal/entity"
 	"github.com/kalunik/urShorty/internal/repository"
+	"github.com/kalunik/urShorty/internal/usecase/webapi"
 	"github.com/kalunik/urShorty/pkg/logger"
 	"github.com/kalunik/urShorty/pkg/utils"
 	"net/url"
@@ -13,8 +14,8 @@ import (
 
 type Usecase interface {
 	AddUrlPath(ctx context.Context, meta *entity.PathMeta) error
-	GetFullUrl(ctx context.Context, shortPath string) (string, error)
-	GetListVisits(ctx context.Context, shortPath string) (*entity.PathVisitsList, error)
+	GetFullUrl(ctx context.Context, shortPath string, visitorIP string) (string, error)
+	PathVisits(ctx context.Context, shortPath string) (*entity.PathVisitsList, error)
 	IsExists(ctx context.Context, shortPath string) (bool, error)
 	GetRepo() repository.RedisRepository
 }
@@ -22,6 +23,7 @@ type Usecase interface {
 type PathMetaUsecase struct {
 	redisRepo      repository.RedisRepository
 	clickhouseRepo repository.ClickhouseRepository
+	geoIP          webapi.IPGeolocation
 	log            logger.Logger
 }
 
@@ -29,13 +31,14 @@ func NewPathMetaUsecase(redis repository.RedisRepository, clickhouse repository.
 	return &PathMetaUsecase{
 		redisRepo:      redis,
 		clickhouseRepo: clickhouse,
+		geoIP:          webapi.NewIPGeoWebAPI(),
 		log:            logger,
 	}
 }
 
 func (u *PathMetaUsecase) AddUrlPath(ctx context.Context, meta *entity.PathMeta) error {
 	var err error
-	meta.ShortPath, err = utils.GenerateHash(meta.FullUrl)
+	meta.ShortPath, err = utils.GenerateHash()
 	if err != nil {
 		return errors.New("addPair: generate hash fail")
 	}
@@ -54,22 +57,25 @@ func (u *PathMetaUsecase) AddUrlPath(ctx context.Context, meta *entity.PathMeta)
 	return nil
 }
 
-func (u *PathMetaUsecase) GetFullUrl(ctx context.Context, shortUrl string) (string, error) {
+func (u *PathMetaUsecase) GetFullUrl(ctx context.Context, shortUrl string, visitorIP string) (string, error) {
 	fullUrl, err := u.redisRepo.GetFullUrl(ctx, shortUrl)
 	if err != nil {
 		return "", err
 	}
 
-	//TODO Add Lat Lon (go?)
+	location, err := u.geoIP.GetIPLocation(visitorIP)
+	if err != nil {
+		return "", err
+	}
+
 	meta := entity.PathMeta{
 		ShortPath: shortUrl,
 		VisitedAt: time.Now(),
-		Latitude:  54,
-		Longitude: 12,
-		Country:   "Rusland",
-		City:      "Moscow",
-		Proxy:     false,
+		Country:   location.Country,
+		City:      location.City,
+		Proxy:     location.Proxy,
 	}
+
 	err = u.clickhouseRepo.AddPathVisit(ctx, meta)
 	if err != nil {
 		return fullUrl, err
@@ -78,8 +84,8 @@ func (u *PathMetaUsecase) GetFullUrl(ctx context.Context, shortUrl string) (stri
 	return fullUrl, nil
 }
 
-func (u *PathMetaUsecase) GetListVisits(ctx context.Context, shortPath string) (*entity.PathVisitsList, error) {
-	visits, err := u.clickhouseRepo.ListVisits(ctx, shortPath)
+func (u *PathMetaUsecase) PathVisits(ctx context.Context, shortPath string) (*entity.PathVisitsList, error) {
+	visits, err := u.clickhouseRepo.PathVisits(ctx, shortPath)
 	if err != nil {
 		return nil, err
 	}

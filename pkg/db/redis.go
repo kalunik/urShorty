@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-type redisStorage struct {
-	client *redis.Client
-}
-
 func NewRedisConnection(cfg *config.AppConfig) (*redis.Client, error) {
 	redisAddr := cfg.Redis.RedisAddr
 	if redisAddr == "" {

@@ -1,10 +1,10 @@
 server:
-  Port: :4000
+  Port: ":4000"
   SSL: false
   CtxDefaultTimeout: 12
 
 redis:
-  RedisAddr: localhost:6379
+  RedisAddr: "localhost:6379"
   RedisPassword:
   RedisDb: 0
   RedisDefaultdb: 0

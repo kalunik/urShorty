@@ -15,7 +15,7 @@ import (
 type PathMetaHandlers interface {
 	addPath(w http.ResponseWriter, r *http.Request)
 	getFullUrl(writer http.ResponseWriter, request *http.Request)
-	listVisits(writer http.ResponseWriter, request *http.Request)
+	pathVisits(writer http.ResponseWriter, request *http.Request)
 }
 
 type Handlers struct {
@@ -58,7 +58,8 @@ func (h *Handlers) addPath(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) getFullUrl(w http.ResponseWriter, r *http.Request) {
 	shortUrl := chi.URLParam(r, "hash")
-	fullUrl, err := h.pathMetaUsecase.GetFullUrl(context.Background(), shortUrl)
+
+	fullUrl, err := h.pathMetaUsecase.GetFullUrl(context.Background(), shortUrl, utils.GetIPAddress(r))
 	if err != nil {
 		utils.LogResponseError(r, h.log, err)
 		http.Error(w, "Failed to find full URL", http.StatusBadRequest)
@@ -69,7 +70,7 @@ func (h *Handlers) getFullUrl(w http.ResponseWriter, r *http.Request) {
 	h.log.Infof("client redirected to `%s`", fullUrl)
 }
 
-func (h *Handlers) listVisits(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) pathVisits(w http.ResponseWriter, r *http.Request) {
 	shortPath := chi.URLParam(r, "hash")
 	pathExist, err := h.pathMetaUsecase.IsExists(context.Background(), shortPath)
 	if err != nil {
@@ -82,14 +83,14 @@ func (h *Handlers) listVisits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	visits, err := h.pathMetaUsecase.GetListVisits(context.Background(), shortPath)
+	visits, err := h.pathMetaUsecase.PathVisits(context.Background(), shortPath)
 	if err != nil {
-		utils.LogResponseError(r, h.log, fmt.Errorf("listVisits: usecase fail, %w", err))
+		utils.LogResponseError(r, h.log, fmt.Errorf("pathVisits: usecase fail, %w", err))
 		http.Error(w, "Failed to get list of visits", http.StatusInternalServerError)
 		return
 	}
 	if err := json.NewEncoder(w).Encode(visits); err != nil {
-		utils.LogResponseError(r, h.log, fmt.Errorf("listVisits: encode fail, %w", err))
+		utils.LogResponseError(r, h.log, fmt.Errorf("pathVisits: encode fail, %w", err))
 		http.Error(w, "Failed to encode json", http.StatusInternalServerError)
 		return
 	}
