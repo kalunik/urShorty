@@ -1,0 +1,106 @@
+definitions:
+  entity.PathMeta:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      domain:
+        type: string
+      full_url:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      proxy:
+        type: boolean
+      short_path:
+        type: string
+      visited_at:
+        type: string
+    type: object
+host: localhost:4000
+info:
+  contact: {}
+  description: This is a URL shortener service.
+  title: urShorty API
+  version: "1.0"
+paths:
+  /short/:
+    post:
+      consumes:
+      - application/json
+      description: generate a short path
+      parameters:
+      - description: only full_url param is required
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.PathMeta'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entity.PathMeta'
+        "400":
+          description: Bad Request
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: Add a new path
+      tags:
+      - pathMeta
+  /short/{hash}:
+    get:
+      description: takes a path and returned an original destination
+      parameters:
+      - description: a shortened path
+        in: query
+        name: hash
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Found
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: redirect to original destination
+      tags:
+      - pathMeta
+  /short/{hash}/visits:
+    get:
+      description: takes a path and returned list of visits
+      parameters:
+      - description: a shortened path
+        in: query
+        name: hash
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.PathMeta'
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      summary: list of path's visits
+      tags:
+      - pathMeta
+swagger: "2.0"

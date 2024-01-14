@@ -1,4 +1,4 @@
-POST localhost:4000/shorten/
+POST localhost:4000/short/
 Content-Type: application/json
 
 {
@@ -6,10 +6,10 @@ Content-Type: application/json
 }
 
 ###
-GET localhost:4000/shorten/slb4yBXR
+GET localhost:4000/short/slb4yBXR
 
 ###
-GET localhost:4000/shorten/cG1hbJE/visits
+GET localhost:4000/short/cG1hbJE/visits
 
 ###
 

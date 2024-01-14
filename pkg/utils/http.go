@@ -2,18 +2,8 @@ package utils
 
 import (
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/kalunik/urShorty/pkg/logger"
 	"net/http"
 )
-
-func LogResponseError(r *http.Request, logger logger.Logger, err error) {
-	logger.ErrorfCaller(
-		1, "RequestID: %s, IPAddress: %s, Error: %s",
-		GetRequestID(r),
-		GetIPAddress(r),
-		err,
-	)
-}
 
 func GetRequestID(r *http.Request) string {
 	return middleware.GetReqID(r.Context())

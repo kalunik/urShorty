@@ -2,31 +2,12 @@ package utils
 
 import (
 	"context"
-	"errors"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/golang/mock/gomock"
-	mock_logger "github.com/kalunik/urShorty/pkg/logger/mocks"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
-
-func TestLogResponseError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockLogger := mock_logger.NewMockLogger(ctrl)
-
-	r := &http.Request{
-		RemoteAddr: "127.0.0.1:43647",
-	}
-	expectedError := errors.New("testError")
-	mockLogger.EXPECT().ErrorfCaller(1, "RequestID: %s, IPAddress: %s, Error: %s",
-		GetRequestID(r),
-		GetIPAddress(r),
-		expectedError).Return()
-
-	LogResponseError(r, mockLogger, expectedError)
-}
 
 func TestGetIPAddressGetRequestID(t *testing.T) {
 	test := make(map[string]string)

@@ -17,5 +17,9 @@ config:
 			@(cp ./config/config-sample.yml $(CONFIG))
 			@(cp ./config/config-sample.yml $(CONFIG_LOCAL))
 
+swagger:
+			@swag fmt -g=./internal/app/app.go
+			@swag init -g=./internal/app/app.go --output=./docs/swagger
 
-.PHONY: all local config
+
+.PHONY: all local config swagger

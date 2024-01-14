@@ -35,5 +35,6 @@ func main() {
 	}
 	defer clickhouseClient.Close()
 	log.Info("clickhouse connected")
+
 	app.NewApp(redisClient, clickhouseClient, log, appConfig).Run()
 }
